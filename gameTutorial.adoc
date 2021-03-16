@@ -82,6 +82,8 @@ Your `remixData` object should now look something like this:
   },
 --------------
 
+*Don't forget to save your changes!*
+
 If you have a Live Preview running (right side of your screen in the Web Editor), you'll notice that the background image has already changed, as well as the player image in the main menu!
 
 Loading assets
@@ -707,22 +709,22 @@ We want this game to be easily remixable by other people and shared everywhere o
 
 Let's explore a new section of the game template.
 
-If you open `Remix/index.js`, you'll find some workflow already set up.
+If you open `frontend/src/Components/Remix/index.js`, you'll find some workflow already set up.
 
 [NOTE]
 You can see what your Remix menu currently looks like in the `Remix` tab of the http://developer.withkoji.com/docs/develop/testing-templates#_using_the_koji_debugger[Debugger], or inside the Live Preview from your web editor
 
-Luckily, since we've already made a generic `Player` class that uses `imgPlayer` for its image, we can take advantage of this template once more because it already has everything set up for our player to be customizable.
+*Background Image* and *Music* customization are already handled by the template, so we can just leave them as they are.
+
+Luckily, since we've already made a generic `Player` class that uses `imgPlayer` for its image, we can take advantage of the template once more because it already has everything set up for our player to be customizable.
 
 image:https://i.imgur.com/PvpEy66.png[alt="screenshot player",width=256,height=256]
 
 To test it out, try changing the `Player` image and going into preview mode. Our player is different now! 
 
-If this was a published project, you would just click on publish and your game would already be shareable with the new image in it!
-
 But what about our `Collectible` image? Let's make that customizable too, using a similar workflow as with `Player`.
 
-First, let's make a React Hook that will represent our `Collectible` image:
+First, let's make a State Hook that will represent our `Collectible` image:
 
 [source,javascript]
 -------------------
@@ -736,7 +738,7 @@ const Component = () => {
 
 -------------------
 
-Notice that we also created an `isCollectibleInvalid` state hook. We will need this to make sure the user has actually uploaded an image. We don't them to publish the game without it.
+Notice that we also created an `isCollectibleInvalid` state hook. We will need this to make sure the user has actually uploaded an image. We don't them to publish the game without one.
 
 Then in `assignInitialValues()`, which is inside our useEffect Hook when the Remix components mounts, we assign the initial value from `koji.json`:
 
@@ -756,7 +758,7 @@ const Component = () => {
 
         ...
 
-    }, [])
+    })
 
 }
 -------------------
@@ -816,14 +818,14 @@ Find the component that looks like this:
     <ImageButton
         src={optimizeImage(imgPlayer, 120, 120)}
         canDelete={canUpdateImages}
-        onClick={changePlayer}
+        onClick={changeImgPlayer}
         onDelete={deletePlayer}
         isInvalid={isPlayerInvalid}
     />
 </div>
 -------------------
 
-Make a copy just below it, inside the `<Section>` component, and modify it to look like this:
+Make a copy just below it, still inside the `<Section>` component, and modify it to look like this:
 
 [source,javascript]
 -------------------
@@ -841,15 +843,15 @@ Make a copy just below it, inside the `<Section>` component, and modify it to lo
 </div>
 -------------------
 
-Lastly, we want to modify the `onFinish()` function to prevent the user from publishing if they haven't uploaded an image.
+Lastly, we want to modify the `finish()` function to prevent the user from publishing if they haven't uploaded an image.
 
 It already has that logic handled for `imgPlayer`, so we can just modify it to include `imgCollectible` as well:
 
 [source,javascript]
 -------------------
-const onFinish = async () => {
+const finish = async () => {
     if (imgPlayer === "" || imgCollectible === "") {
-        setError("Complete the required selections to continue.");
+        setErrorLabel("Complete the required selections to continue.");
 
         if (imgPlayer === "") {
             setIsPlayerInvalid(true);
@@ -883,7 +885,7 @@ Customizing the thumbnail preview
 
 The very last thing we need to do before releasing our new game into the wild, is to customize the thumbnail preview, so when users share their remixes, they get nice little previews that people will click on!
 
-Basically, whatever we render inside of `Screenshot/index.js` will be rendered in the thumbnail preview.
+Basically, whatever we render inside of `frontend/src/Components/Screenshot/index.js` will be rendered in the thumbnail preview.
 
 [NOTE]
 You can see what your thumbnail preview currently looks like in the `Thumbnail` tab of the http://developer.withkoji.com/docs/develop/testing-templates#_using_the_koji_debugger[Debugger], or inside the Live Preview from your web editor
@@ -905,7 +907,7 @@ It looks something like this:
 }
 -------------------
 
-Let's move the player down a bit. To do that, just change the `top` value to something like `70%`:
+Let's move the player down a bit. To do that, just change the `top` value to something like `80%`:
 
 [source,javascript]
 -------------------
@@ -920,7 +922,7 @@ Let's move the player down a bit. To do that, just change the `top` value to som
 }
 -------------------
 
-Now, let's add some `Collectible` images by duplicating the player's `FeaturedImage` below, and changing their positions around. They don't have to be exactly the same, you can play around and see what you like best:
+Now, let's add some `Collectible` images by duplicating the player's `FeaturedImage` below, and changing their positions around. They don't have to be exactly the same, you can play around and see what you like best. You can even randomize their positions if you want!
 
 [source,javascript]
 -------------------
@@ -953,7 +955,7 @@ Now, let's add some `Collectible` images by duplicating the player's `FeaturedIm
 }
 -------------------
 
-Once done, your thumbnail preview shuold looks something like this: 
+Once done, your thumbnail preview should look something like this: 
 
 image:https://i.imgur.com/rsElqqp.png[alt="screenshot player",width=256,height=256]
 
@@ -962,9 +964,20 @@ Finishing Up
 
 That's it, we just created a *fun and remixable Koji game*!
 
-All that's left to do is to publish it from the *Publish Now* menu, and share it with your friends!
+All that's left to do is to publish it from the *Publish Now* menu, and share it with your friends so they can compete for the top leaderboard spot!
 
 Of course, the project is now your playground. You can go back to modify or add new features, make improvements, anything you can imagine!
+
+Here are some features you can try adding:
+
+* Add horizontal speed to Collectibles
+* Multiple Collectible images
+* Flip the rules so that you have to avoid everything
+* Add more animations to collectibles
+* Have the player be able to move in all directions, not just horizontally
+* Add keyboard controls
+* Add projectiles so you can shoot the falling objects
+* Make an MMORPG out of this! (just kidding)
 
 You can also post your new game to our https://discord.gg/kMkjJQ6Phb[Discord Server], along with any suggestions and thoughts on how you think we can make this tutorial even better!
 
