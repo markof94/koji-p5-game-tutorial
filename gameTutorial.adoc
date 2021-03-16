@@ -961,3 +961,6 @@ All that's left to do is to publish it from the *Publish Now* menu, and share it
 Of course, the project is now your playground. You can go back to modify or add new features, make improvements, anything you can imagine!
 
 You can also post your new game to our https://discord.gg/kMkjJQ6Phb[Discord Server], along with any suggestions and thoughts on how you think we can make this tutorial even better!
+
+
+You can find the finished game created by following this tutorial https://withkoji.com/~Svarog1389/ekpy[here].
