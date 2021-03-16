@@ -3,11 +3,16 @@
 
 In this tutorial, we will go through the process of creating a remixable https://withkoji.com/~Svarog1389/rxkd[Falling Objects^] game with an existing https://withkoji.com/~Svarog1389/game-template-1[p5.js Game Template^] as our starting point.
 
-This tutorial assumes you've already gone through the https://developer.withkoji.com/tutorials/getting-started/your-first-project[Getting Started Tutorial^].
+This tutorial assumes you've already gone through the https://developer.withkoji.com/tutorials/getting-started/your-first-project[Getting Started Tutorial^] and are familiar with the basics of Koji.
 
 Let's get started by cloning the https://withkoji.com/~Svarog1389/game-template-1[Game Template]. You can do that by clicking on the *Koji logo* on the upper right corner, then *Advanced*, then find the *Fork* button.
 
-You are free to choose between using the web editor provided by Koji or cloning the newly created project to your local environment.
+You are free to choose between using the Koji web editor or http://developer.withkoji.com/docs/develop/use-git[cloning the newly created project to your local environment].
+
+If you get stuck at any point, feel free to ask for help in our https://discord.gg/kMkjJQ6Phb[Discord Server], or e-mail me at *marko@withkoji.com*
+
+You can also find an overview of the whole game template inside the *README* contained inside the project after you clone it.
+
 
 Game Overview
 ~~~~~~~~~~~~~
@@ -47,13 +52,13 @@ It's preferrable that your sound assets are prefixed with `snd`. That way, they'
 
 You will also notice that there are already some other entries in our `remixData` by default.
 
-Let's also change the `title` and `backgroundImage` to give our game a more distinct look:
+Let's also modify the `title` and `backgroundImage` entries to give our game a more distinct look:
 
 `"title": "Catch The Donuts"`
 
 `"backgroundImage": "https://images.koji-cdn.com/377f7596-8edf-44b1-994d-f9926b3aa641/userData/682dt-G68b11.png"`
 
-Your `remixData` object should now look similar to this:
+Your `remixData` object should now look something like this:
 
 [source,json]
 --------------
@@ -71,22 +76,25 @@ Your `remixData` object should now look similar to this:
   },
 --------------
 
+If you have a Live Preview running (right side of your screen in the Web Editor), you'll notice that the background image has already changed, as well as the player image in the main menu!
+
 Loading assets
 ~~~~~~~~~~~~~~
 
 Now that we've added our assets to `remixData`, we need to load them inside our game so we can use them later.
 
-We will do all our loading in `Game/preload.js`
+We will do all of our loading in `frontend/src/Components/Game/preload.js`
 
-We do not have to do anything to load our sounds, since they will be loaded automatically as they are already prefixed with `snd`.
+We do not have to do anything to load our sounds, since they will be loaded automatically as their keys are prefixed with `snd`.
 
 To load images, we can use `addImage()`:
 
 [source,javascript]
 const preload = () => {
+    const remixValues = Koji.remix.get();
     ...
-    addImage('player', defaultValues.imgPlayer, game.playerSize);
-    addImage('collectible', defaultValues.imgCollectible, 100);
+    addImage('player', remixValues.imgPlayer, game.playerSize);
+    addImage('collectible', remixValues.imgCollectible, 100);
     ...
 }
 
@@ -101,31 +109,23 @@ const initializeValues = () => {
 
 Since there's a considerable difference in mobile and desktop display sizes, we can change our `playerSize` according to the device using the `isMobile()` function provided by the template.
 
+We can also change game instructions here by modifying `game.instructions` property.
+
+Change it to something like: 
+
+`game.instructions = "Touch to move around!";`
+
 Adding a Player
 ~~~~~~~~~~~~~~~
 
 This template uses an https://en.wikipedia.org/wiki/Entity_component_system[Entity] system, so we can extend the base `Entity` class from our template to define the game objects.
 
-Let's make an empty `Player.js` file inside of our `Game/Entities` folder.
+Let's go to `Player.js` inside of our `frontend/src/Components/Game/Entities` folder.
 
-Inside `Player.js`, we can make a basic child of the `Entity` class like the following:
+[NOTE]
+This template already has an example `Player` class defined, so no need to create a new file, we can use that!
 
-[source,javascript]
--------------------
-import { game } from '..'
-import Entity from './Entity'
-
-export default class Player extends Entity {
-    constructor(x, y, options) {
-        super(x, y, options);
-
-    }
-}
--------------------
-
-Right now, it doesn't have any image assigned to it, so we can't display it anywhere!
-
-Let's assign it an image that we've already loaded, and give it a size:
+Let's modify the constructor to give it an image that we've already loaded, and give it a size:
 
 [source,javascript]
 -------------------
@@ -139,20 +139,28 @@ export default class Player extends Entity {
         this.img = game.images.player;
         this.size = game.playerSize;
     }
+
+    update(){
+
+    }
 }
 -------------------
 
-That was all we needed to do to have our Player object ready to be drawn to the screen! Now we just need to create it.
+[NOTE]
+`update()` function should also be cleared in case there's any example code in it. We will modify it later.
 
-Head over to `Game/setup.js`, inside the `init()` function, and add:
+That was all we needed to do to have our `Player` object ready to be drawn to the screen! Now we just need to instantiate it.
+
+Head over to `frontend/src/Components/Game/setup.js` where you'll find the `init()` function. Clear everything inside it and change it to:
 
 [source,javascript]
 -------------------
 import { game } from "."
 import Player from './Entities/Player'
 
+...
+
 const init = () => {
-    ...
     const x = game.width / 2;
     const y = game.height - 160;
     const player = new Player(x, y);
@@ -164,15 +172,15 @@ const init = () => {
 Here we defined our `x` and `y` coordinates to spawn our Player on (center bottom of the screen), added the `player` instance to our list of entities, and also assigned the player object to our game instance so we can easily access it later.
 
 
-If we open up the game preview now and click on the Play button, we should see our Player image on the bottom of the screen.
+If we take a look at the game preview now and click on the Play button, we should see our Player image on the bottom of the screen.
 
-`SCREENSHOT SCREENSHOT SCREENSHOT SCREENSHOT SCREENSHOT`
+image:https://i.imgur.com/jynK73v.png[alt="screenshot player",width=256,height=256]
 
 Awesome!
 
-But since this is a game we're making, we want our player to move when we tell them to, not just sit around in one place!
+But since this is a game we're making, we want our `Player` to move when we tell it to, not just sit around!
 
-To do that, let's head back to our `Game/Entities/Player.js` file.
+To do that, let's head back to our `frontend/src/Components/Game/Entities/Player.js` file.
 
 We'll define a new function to handle our player movement, call it `handleControls()`, and put it inside `update()` which runs every frame:
 
@@ -201,7 +209,7 @@ This works, but let's make it prettier!
 
 What if the player tilted slightly in the direction it's moving? We also don't want to move outside of the screen for any reason.
 
-Let's add those features!
+Let's add those features by expanding our `Player` class some more:
 
 [source,javascript]
 -------------------
@@ -211,16 +219,12 @@ import { Smooth } from '../Utils/EasingFunctions'
 
 export default class Player extends Entity {
     constructor(x, y, options) {
-        super(x, y, options);
-        
-        this.img = game.images.player;
-        this.size = game.playerSize;
+        ...
         this.goalRotation = 0;
     }
 }
 
 update(){
-    ...
     this.handleControls();
 
     this.rotation = Smooth(this.rotation, this.goalRotation, 8);
@@ -251,9 +255,11 @@ keepInsideScreen() {
 }
 -------------------
 
-With `keepInsideScreen()`, we're simply constraining the player's `x` coordinate so we don't overlap or go outside the screen boundaries.
+With `keepInsideScreen()`, we're simply constraining the player's `x` coordinate so it doesn't overlap or go outside the screen boundaries.
 
-Then we check if we're touching outside of the player, and if we are, set our `goalRotation` slightly to that side.
+Then we check if we're touching outside of the player, in which case we're setting `goalRotation` slightly to that side.
+
+image:https://i.imgur.com/ELLEfka.gif[alt="screenshot player",width=160,height=160]
 
 Looking good so far!
 
@@ -263,7 +269,7 @@ Adding Collectibles
 
 We have the player. Now we need something to collect!
 
-Let's make a new `Collectible.js` file inside the `Game/Entities` folder, just like we did with `Player`, and give it some properties:
+Let's make a new `Collectible.js` file inside the `frontend/src/Components/Game/Entities` folder, and give it some properties:
 
 [source,javascript]
 -------------------
@@ -286,7 +292,7 @@ export default class Collectible extends Entity {
 
 We have a bit more going on here than with player. Let's break it down:
 
-`this.img = game.images.collectible` - give it a previously loaded Collectible image
+`this.img = game.images.collectible` - give it a previously loaded `Collectible` image
 
 `this.size = game.random(game.collectibleSizeMin, game.collectibleSizeMax)` - set the size to a random value between `game.collectibleSizeMin` and `game.collectibleSizeMax`
 
@@ -298,7 +304,7 @@ We have a bit more going on here than with player. Let's break it down:
 
 `this.isCollected = false` - a boolean to track whether it's been collected or not
 
-In order for this to work, we need to define some more values inside the game settings, so we'll head back to `Game/preload.js`, and in `initializeValues()`:
+In order for this to work, we need to define some more values inside the game settings, so we'll head back to `frontend/src/Components/Game/preload.js`, and in `initializeValues()` add:
 
 [source,javascript]
 -------------------
@@ -316,13 +322,15 @@ Since the `Entity` class has its movement already handled based on the `velocity
 
 Now let's try spawning some!
 
-Since we want our collectibles to spawn throughout the game, and not just in the beginning like the Player, we can do that inside `Game/draw.js`. Every function placed here will run with each game frame.
+Collectibles need to spawn throughout the game, and not just in the beginning like the Player does. We can do that inside `frontend/src/Components/Game/draw.js`. Every function placed here will run with each game frame.
 
-We'll define a new `manageSpawn()` function that will handle our spawning logic and put it inside `draw()`:
+We'll define a new `manageSpawn()` function that will handle our spawning logic, then put it inside `draw()`:
 
 [source,javascript]
 -------------------
 ...
+import Collectible from './Entities/Collectible'
+
 const draw = () => {
     ...
     manageSpawn();
@@ -361,13 +369,15 @@ const initializeValues = () => {
 
 If you start the game now, you should see a bunch of donuts appearing every `1.5` to `2` seconds and falling to the bottom.
 
-That's all nice and dandy, but how do we catch them? No point in falling donuts if you can't eat them!
+image:https://i.imgur.com/mtzJFG2.gif[alt="screenshot player",width=160,height=160]
+
+That's nice and all, but how do we catch them? No point in falling donuts if you can't eat them!
 
 
 Collision Checking
 ~~~~~~~~~~~~~~~~~~
 
-To check for collisions between Player and Collectibles, we'll modify `Game/Entities/Player.js` again.
+To check for collisions between Player and Collectibles, we'll modify `frontend/src/Components/Game/Entities/Player.js` again.
 
 Let's add a new function to do that, and put it in `update()`!
 
@@ -396,13 +406,13 @@ export default class Player extends Entity {
 }
 -------------------
 
-First, we use `game.findByTag()` filter our collectibles, then run through each one asking if they are colliding with the `Player`.
+First, we use `game.findByTag()` to filter our collectibles, then run through each one asking if they are colliding with the `Player`.
 
-For that, we're using `CollisionCircle()`, provided by the game template (from `Game/Utils/Collision`), which takes two `Entities` as arguments.
+For that, we're using `CollisionCircle()`, provided by the game template (from `frontend/src/Components/Game/Utils/Collision`), which takes two `Entities` as arguments.
 
 So if we are indeed colliding, and the collectible in question hasn't already been collected, we trigger the `onCollect()` handler on the target collectible which we will define next.
 
-Back to `Game/Entities/Collectible.js`:
+Back to `frontend/src/Components/Game/Entities/Collectible.js`:
 
 [source,javascript]
 -------------------
@@ -422,7 +432,7 @@ This just sets our `isCollected` flag to true.
 
 Now, we could just remove our Collectible object now and be done with it, but we don't want this to be like any other tutorial. Let's spice things up a bit!
 
-Instead of the Collectible just disappearing upon contact, let's have the Player attract it like a magnet and make it explode into particles! Now that sounds more fun!
+Instead of the Collectible just disappearing upon contact, let's have the Player attract it like a magnet and make it explode into particles! That sounds more fun!
 
 So let's override Collectible's `update()` function, but also keep the original behavior:
 
@@ -432,6 +442,8 @@ import { game } from '..'
 import Entity from './Entity'
 import playSound from '../Utils/playSound'
 import { Smooth, Ease, EasingFunctions } from '../Utils/EasingFunctions'
+import { spawnParticles } from '../Effects/Particle'
+import { spawnFloatingText } from '../Effects/FloatingText'
 
 export default class Collectible extends Entity {
     constructor(x, y, options){
@@ -508,7 +520,7 @@ Then finally, in `getCollected()`, we:
 * Play the `collect` sound.
 * Call `game.player.pulse()`, which resets Player's "pulse" animation. We don't have that animation yet, so let's set it up! Also, remember when we set the `game.player` property. We finally made use of it!
 
-Back to `Game/Entities/Player.js`:
+Back to `frontend/src/Components/Game/Entities/Player.js`:
 
 [source,javascript]
 -------------------
@@ -553,16 +565,18 @@ Then we modify the scale again, but this time we're using the `easeOutElastic` f
 
 `pulse()` function just resets the `animTimer` to `0`, which restarts the animation.
 
-Now it's getting better!
+image:https://i.imgur.com/EcVO5ZU.gif[alt="screenshot player",width=160,height=160]
+
+Now it's looking better!
 
 Checking for missed Collectibles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Like all good things in life, this game, too, has to come to an end!
+Like all good things in life, this game, too, has to come to an end somehow!
 
 To do that, we'll have to check if any of the collectibles went past the player and off the screen.
 
-Let's go back to `Game/Entities/Collectible.js` and add that check:
+Let's go back to `frontend/src/Components/Game/Entities/Collectible.js` and add that check:
 
 [source,javascript]
 -------------------
@@ -571,6 +585,8 @@ import Entity from './Entity'
 import playSound from '../Utils/playSound'
 
 export default class Collectible extends Entity {
+    ...
+
     update(){
         ...
         this.checkIfMissed();
@@ -599,10 +615,349 @@ First, we check the Collectible's `pos.y` coordinate, and if it's higher the low
 * Shake the camera a bit to amplify that negative effect
 * Set the `shouldBeRemoved` flag to `true`, to make sure our object will be deleted from memory in the next frame.
 
+image:https://i.imgur.com/ptLizkT.gif[alt="screenshot player",width=160,height=160]
 
--Manage difficulty
+[NOTE]
+Deleting unused objects from memory is an especially important step in order to prevent memory leaks from prolonged gameplay sessions which can result in performance slowdown and eventually a crash
 
--Remix
+Managing difficulty
+~~~~~~~~~~~~~~~~~~~
 
--Screenshot
+At this stage, our game is finally playable!
 
+But right now, it might be a little too repetitive and easy. We want to make it competitive and progressively more difficult as time passes, so our players have more incentive to compete on the leaderboard.
+
+There's an easy way to do that!
+
+Remember how we had a function that handled our spawn logic? We can do something similar this time.
+
+Let's define some settings in `frontend/src/Components/Game/preload.js` first:
+
+[source,javascript]
+-------------------
+...
+const initializeValues = () => {
+    ...
+    game.difficultyIncreasePeriod = 2;
+    game.difficultyIncreaseTimer = 2;
+    game.difficultyIncreaseAmount = 0.1;
+    game.speedLimit = 12;
+    game.speedIncrease = 0.1;
+}
+-------------------
+
+Then we can create our handler function in `frontend/src/Components/Game/draw.js`:
+
+[source,javascript]
+-------------------
+...
+const draw = () => {
+    ...
+    manageDifficulty();
+}
+
+const manageDifficulty = () => {
+    game.difficultyIncreaseTimer -= game.delta();
+
+    if (game.difficultyIncreaseTimer <= 0) {
+        increaseDifficulty();
+        game.difficultyIncreaseTimer = game.difficultyIncreasePeriod;
+    }
+}
+
+const increaseDifficulty = () => {
+    if (game.spawnPeriodMin > game.spawnPeriodLimit) {
+        game.spawnPeriodMin -= game.difficultyIncreaseAmount;
+        game.spawnPeriodMax -= game.difficultyIncreaseAmount;
+    }
+
+    if (game.speedMax < game.speedLimit) {
+        game.speedMax += game.speedIncrease;
+        game.speedMin += game.speedIncrease;
+    }
+}
+-------------------
+
+So, using our timer we periodically increase our difficulty by changing some game settings, up to a point. It's important to set a limit to prevent the game getting totally unplayable at some point, which most players don't really consider a fun experience.
+
+Every time the difficulty increases, we:
+
+* Slightly decrease the period at which Collectibles spawn
+* Slightly increase the falling speed of Collectibles
+
+Congratulations!
+^^^^^^^^^^^^^^^^
+
+We've actually finished developing our game!
+
+Of course, you can go ahead and try modifying something, or adding a new feature. Everything's a bonus from now on!
+
+Remix
+-----
+
+We've finished the main part of our game. But this is Koji! We don't stop here. 
+
+We want this game to be easily remixable by other people and shared everywhere online!
+
+Let's explore a new section of the game template.
+
+If you open `Remix/index.js`, you'll find some workflow already set up.
+
+[NOTE]
+You can see what your Remix menu currently looks like in the `Remix` tab of the http://developer.withkoji.com/docs/develop/testing-templates#_using_the_koji_debugger[Debugger], or inside the Live Preview from your web editor
+
+Luckily, since we've already made a generic `Player` class that uses `imgPlayer` for its image, we can take advantage of this template once more because it already has everything set up for our player to be customizable.
+
+image:https://i.imgur.com/PvpEy66.png[alt="screenshot player",width=256,height=256]
+
+To test it out, try changing the `Player` image and going into preview mode. Our player is different now! 
+
+If this was a published project, you would just click on publish and your game would already be shareable with the new image in it!
+
+But what about our `Collectible` image? Let's make that customizable too, using a similar workflow as with `Player`.
+
+First, let's make a React Hook that will represent our `Collectible` image:
+
+[source,javascript]
+-------------------
+...
+const Component = () => {
+    ...
+    const [imgCollectible, setImgCollectible] = useState("");
+    const [isCollectibleInvalid, setIsCollectibleInvalid] = useState("");
+
+}
+
+-------------------
+
+Notice that we also created an `isCollectibleInvalid` state hook. We will need this to make sure the user has actually uploaded an image. We don't them to publish the game without it.
+
+Then in `assignInitialValues()`, which is inside our useEffect Hook when the Remix components mounts, we assign the initial value from `koji.json`:
+
+[source,javascript]
+-------------------
+...
+const Component = () => {
+    ...
+    const [imgCollectible, setImgCollectible] = useState("");
+    ...
+
+    const assignInitialValues = () => {
+        const remixValues = Koji.remix.get();
+        ...
+
+        setImgCollectible(remixValues.imgCollectible);
+
+        ...
+
+    }, [])
+
+}
+-------------------
+
+We also need to define some functions that will let us change or delete our collectible image:
+
+[source,javascript]
+-------------------
+...
+const Component = () => {
+    ...
+
+    const changeCollectible = async () => {
+        const image = await Koji.ui.capture.image();
+        if (!image || image === "") return;
+
+        setImgCollectible(image);
+        setIsCollectibleInvalid(false);
+        await Koji.remix.set({ imgCollectible: image })
+        updateGame();
+    }
+
+    const deleteCollectible = async () => {
+        setImgCollectible("");
+        await Koji.remix.set({ imgCollectible: "" })
+        updateGame();
+    }
+
+}
+-------------------
+
+To capture our image, we're using `@withkoji/core` package that lets us easily upload an image, paste one from a link or choose from one of the asset packs.
+
+`Koji.ui.capture.image()` will return `null` in case the user has cancelled image selection, so we also include a simple check to make sure that's not the case.
+
+Then we:
+
+* Update our `imgCollectible` *state hook* with the resulting image
+* Reset the `isCollectibleInvalid` state hook
+* Update our `imgCollectible` *remix value* with the resulting image
+* Update the game
+
+We want to update our game here because we have a running game preview behind our Remix panel. If we change something that wouldn't be instantly previewable inside the game, this step can be skipped.
+
+Inside `deleteCollectible()`, we do the same thing, except we just set our `imgCollectible` to an empty string instead of capturing an image.
+
+Next, let's render the component which represents a collectible image and lets us customize it. We can once again use the existing structure from `Player`.
+
+Find the component that looks like this:
+
+[source,javascript]
+-------------------
+<div>
+    <Label>
+        <b>{"Player"}</b>
+    </Label>
+    <ImageButton
+        src={optimizeImage(imgPlayer, 120, 120)}
+        canDelete={canUpdateImages}
+        onClick={changePlayer}
+        onDelete={deletePlayer}
+        isInvalid={isPlayerInvalid}
+    />
+</div>
+-------------------
+
+Make a copy just below it, inside the `<Section>` component, and modify it to look like this:
+
+[source,javascript]
+-------------------
+<div>
+    <Label>
+        <b>{"Collectible"}</b>
+    </Label>
+    <ImageButton
+        src={optimizeImage(imgCollectible, 120, 120)}
+        canDelete={canUpdateImages}
+        onClick={changeCollectible}
+        onDelete={deleteCollectible}
+        isInvalid={isCollectibleInvalid}
+    />
+</div>
+-------------------
+
+Lastly, we want to modify the `onFinish()` function to prevent the user from publishing if they haven't uploaded an image.
+
+It already has that logic handled for `imgPlayer`, so we can just modify it to include `imgCollectible` as well:
+
+[source,javascript]
+-------------------
+const onFinish = async () => {
+    if (imgPlayer === "" || imgCollectible === "") {
+        setError("Complete the required selections to continue.");
+
+        if (imgPlayer === "") {
+            setIsPlayerInvalid(true);
+        }
+
+        if (imgCollectible === "") {
+            setIsCollectibleInvalid(true);
+        }
+
+        return;
+    }
+
+    await Koji.remix.set({
+        backgroundImage,
+        music,
+        title,
+    })
+    Koji.remix.finish();
+}
+-------------------
+
+[NOTE]
+We don't need to explicity set `imgPlayer` and `imgCollectible` inside the `Koji.remix.set()` function, because we've already done it with our `onChange` handlers. Setting them here as well won't make any difference in the final result.
+
+image:https://i.imgur.com/F5BamYt.png[alt="screenshot player",width=256,height=256]
+
+That's our `Remix` mode finished! We've just added the ability for users to change the `Collectible` image!
+
+Customizing the thumbnail preview
+---------------------------------
+
+The very last thing we need to do before releasing our new game into the wild, is to customize the thumbnail preview, so when users share their remixes, they get nice little previews that people will click on!
+
+Basically, whatever we render inside of `Screenshot/index.js` will be rendered in the thumbnail preview.
+
+[NOTE]
+You can see what your thumbnail preview currently looks like in the `Thumbnail` tab of the http://developer.withkoji.com/docs/develop/testing-templates#_using_the_koji_debugger[Debugger], or inside the Live Preview from your web editor
+
+By default, this component already shows `imgPlayer` in the center.
+
+It looks something like this:
+
+[source,javascript]
+-------------------
+<FeaturedImage
+    src={optimizeImage(remixValues.imgPlayer, 150, 150)}
+    rotation={randomRange(-30, 30)}
+    style={{
+        left: '50%',
+        top: '50%'
+    }}
+/>
+}
+-------------------
+
+Let's move the player down a bit. To do that, just change the `top` value to something like `70%`:
+
+[source,javascript]
+-------------------
+<FeaturedImage
+    src={optimizeImage(remixValues.imgPlayer, 150, 150)}
+    rotation={randomRange(-30, 30)}
+    style={{
+        left: '50%',
+        top: '80%'
+    }}
+/>
+}
+-------------------
+
+Now, let's add some `Collectible` images by duplicating the player's `FeaturedImage` below, and changing their positions around. They don't have to be exactly the same, you can play around and see what you like best:
+
+[source,javascript]
+-------------------
+<FeaturedImage
+    src={optimizeImage(remixValues.imgCollectible, 150, 150)}
+    rotation={randomRange(-30, 30)}
+    style={{
+        left: '35%',
+        top: '25%'
+    }}
+/>
+
+<FeaturedImage
+    src={optimizeImage(remixValues.imgCollectible, 150, 150)}
+    rotation={randomRange(-30, 30)}
+    style={{
+        left: '75%',
+        top: '35%'
+    }}
+/>
+
+<FeaturedImage
+    src={optimizeImage(remixValues.imgCollectible, 150, 150)}
+    rotation={randomRange(-30, 30)}
+    style={{
+        left: '45%',
+        top: '50%'
+    }}
+/>
+}
+-------------------
+
+Once done, your thumbnail preview shuold looks something like this: 
+
+image:https://i.imgur.com/rsElqqp.png[alt="screenshot player",width=256,height=256]
+
+Finishing Up
+------------
+
+That's it, we just created a *fun and remixable Koji game*!
+
+All that's left to do is to publish it from the *Publish Now* menu, and share it with your friends!
+
+Of course, the project is now your playground. You can go back to modify or add new features, make improvements, anything you can imagine!
+
+You can also post your new game to our https://discord.gg/kMkjJQ6Phb[Discord Server], along with any suggestions and thoughts on how you think we can make this tutorial even better!
