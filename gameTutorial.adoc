@@ -1,0 +1,608 @@
+ Creating a remixable game on Koji
+----------------------------------
+
+In this tutorial, we will go through the process of creating a remixable https://withkoji.com/~Svarog1389/rxkd[Falling Objects^] game with an existing https://withkoji.com/~Svarog1389/game-template-1[p5.js Game Template^] as our starting point.
+
+This tutorial assumes you've already gone through the https://developer.withkoji.com/tutorials/getting-started/your-first-project[Getting Started Tutorial^].
+
+Let's get started by cloning the https://withkoji.com/~Svarog1389/game-template-1[Game Template]. You can do that by clicking on the *Koji logo* on the upper right corner, then *Advanced*, then find the *Fork* button.
+
+You are free to choose between using the web editor provided by Koji or cloning the newly created project to your local environment.
+
+Game Overview
+~~~~~~~~~~~~~
+Falling Objects is a simple game where the player tries to collect as many falling objects as they can without them falling off the screen.
+
+Player loses a life if an object falls down, and the game is over when there are no lives left.
+
+Player moves the character horizontally on the bottom by touching or clicking anywhere on the screen.
+
+Setting up `koji.json`
+~~~~~~~~~~~~~~~~~~~~~~
+
+First, let's define our game assets. 
+
+Inside of `koji.json`, you will find the `remixData` object.
+Let's add some entries to it.
+
+We will need images for our Player and Collectible objects:
+
+
+`"imgPlayer": "https://images.koji-cdn.com/814f445d-4e8d-40cb-83fe-04d120cc1889/userData/x0kfr-player.png"`
+
+`"imgCollectible": "https://images.koji-cdn.com/5f618aa2-e515-49a1-adb2-42dfb88a6f59/userData/1d6jr-donut.png"`
+
+image:https://images.koji-cdn.com/814f445d-4e8d-40cb-83fe-04d120cc1889/userData/x0kfr-player.png[alt="player cat",width=128,height=128]
+image:https://images.koji-cdn.com/5f618aa2-e515-49a1-adb2-42dfb88a6f59/userData/1d6jr-donut.png[alt="collectible donut",width=128,height=128]
+
+As well as sounds for when the player collects or misses anything:
+
+`"sndCollect": "https://objects.koji-cdn.com/814f445d-4e8d-40cb-83fe-04d120cc1889/userData/ydx3v-collect01onlineaudioconverter.com.mp3.mp3",`
+
+
+`"sndLoseLife": "https://objects.koji-cdn.com/814f445d-4e8d-40cb-83fe-04d120cc1889/userData/vqnq8-loseLife.mp3.mp3",`
+
+[NOTE]
+It's preferrable that your sound assets are prefixed with `snd`. That way, they'll be loaded automatically during `preload`.
+
+You will also notice that there are already some other entries in our `remixData` by default.
+
+Let's also change the `title` and `backgroundImage` to give our game a more distinct look:
+
+`"title": "Catch The Donuts"`
+
+`"backgroundImage": "https://images.koji-cdn.com/377f7596-8edf-44b1-994d-f9926b3aa641/userData/682dt-G68b11.png"`
+
+Your `remixData` object should now look similar to this:
+
+[source,json]
+--------------
+"remixData": {
+    "music": "https://objects.koji-cdn.com/45cdb5ca-8318-4318-8271-d0e422e790e0/hjdo0-music.mp3",
+    "musicVolume": 0.25,
+    "title": "Catch The Donuts",
+    "backgroundImage": "https://images.koji-cdn.com/377f7596-8edf-44b1-994d-f9926b3aa641/userData/682dt-G68b11.png",
+    "particle": "https://images.koji-cdn.com/d4d2aab7-1847-481d-8aa6-6866d81d5e0f/zfnue-particle2.png",
+    "imgLife": "https://images.koji-cdn.com/c166301e-e9be-4a9c-8d08-aaffe23d82bb/userData/3z6gw-life.png",
+    "imgPlayer": "https://images.koji-cdn.com/814f445d-4e8d-40cb-83fe-04d120cc1889/userData/x0kfr-player.png",
+    "imgCollectible": "https://images.koji-cdn.com/5f618aa2-e515-49a1-adb2-42dfb88a6f59/userData/1d6jr-donut.png",
+    "sndCollect": "https://objects.koji-cdn.com/814f445d-4e8d-40cb-83fe-04d120cc1889/userData/ydx3v-collect01onlineaudioconverter.com.mp3.mp3",
+    "sndLoseLife": "https://objects.koji-cdn.com/814f445d-4e8d-40cb-83fe-04d120cc1889/userData/vqnq8-loseLife.mp3.mp3"
+  },
+--------------
+
+Loading assets
+~~~~~~~~~~~~~~
+
+Now that we've added our assets to `remixData`, we need to load them inside our game so we can use them later.
+
+We will do all our loading in `Game/preload.js`
+
+We do not have to do anything to load our sounds, since they will be loaded automatically as they are already prefixed with `snd`.
+
+To load images, we can use `addImage()`:
+
+[source,javascript]
+const preload = () => {
+    ...
+    addImage('player', defaultValues.imgPlayer, game.playerSize);
+    addImage('collectible', defaultValues.imgCollectible, 100);
+    ...
+}
+
+Note that we've used `game.playerSize` as player size. We need to define that as well. We will define all of our game settings in `initializeValues()`:
+[source,javascript]
+import isMobile from '../../Utils/isMobile'
+...
+const initializeValues = () => {
+    ...
+    game.playerSize = isMobile() ? 90 : 110;
+}
+
+Since there's a considerable difference in mobile and desktop display sizes, we can change our `playerSize` according to the device using the `isMobile()` function provided by the template.
+
+Adding a Player
+~~~~~~~~~~~~~~~
+
+This template uses an https://en.wikipedia.org/wiki/Entity_component_system[Entity] system, so we can extend the base `Entity` class from our template to define the game objects.
+
+Let's make an empty `Player.js` file inside of our `Game/Entities` folder.
+
+Inside `Player.js`, we can make a basic child of the `Entity` class like the following:
+
+[source,javascript]
+-------------------
+import { game } from '..'
+import Entity from './Entity'
+
+export default class Player extends Entity {
+    constructor(x, y, options) {
+        super(x, y, options);
+
+    }
+}
+-------------------
+
+Right now, it doesn't have any image assigned to it, so we can't display it anywhere!
+
+Let's assign it an image that we've already loaded, and give it a size:
+
+[source,javascript]
+-------------------
+import { game } from '..'
+import Entity from './Entity'
+
+export default class Player extends Entity {
+    constructor(x, y, options) {
+        super(x, y, options);
+        
+        this.img = game.images.player;
+        this.size = game.playerSize;
+    }
+}
+-------------------
+
+That was all we needed to do to have our Player object ready to be drawn to the screen! Now we just need to create it.
+
+Head over to `Game/setup.js`, inside the `init()` function, and add:
+
+[source,javascript]
+-------------------
+import { game } from "."
+import Player from './Entities/Player'
+
+const init = () => {
+    ...
+    const x = game.width / 2;
+    const y = game.height - 160;
+    const player = new Player(x, y);
+    game.addEntity(player);
+    game.player = player;
+}
+-------------------
+
+Here we defined our `x` and `y` coordinates to spawn our Player on (center bottom of the screen), added the `player` instance to our list of entities, and also assigned the player object to our game instance so we can easily access it later.
+
+
+If we open up the game preview now and click on the Play button, we should see our Player image on the bottom of the screen.
+
+`SCREENSHOT SCREENSHOT SCREENSHOT SCREENSHOT SCREENSHOT`
+
+Awesome!
+
+But since this is a game we're making, we want our player to move when we tell them to, not just sit around in one place!
+
+To do that, let's head back to our `Game/Entities/Player.js` file.
+
+We'll define a new function to handle our player movement, call it `handleControls()`, and put it inside `update()` which runs every frame:
+
+[source,javascript]
+-------------------
+import { game } from '..';
+import { Smooth } from '../Utils/EasingFunctions'
+...
+
+update(){
+    this.handleControls();
+}
+
+handleControls(){
+    if(!game.isTouching) return; // Do nothing if we're not touching or clicking
+
+    this.pos.x = Smooth(this.pos.x, game.mouseX, 13);
+}
+-------------------
+
+We're using the `Smooth` function from the template's `Game/Utils/EasingFunctions.js` file, so the player can move smoothly to its goal, which is our `game.mouseX` touch coordinate. The number parameter at the end determines how quickly that happens. The higher it is, the slower the player will move. Feel free to experiment with different numbers if you wish!
+
+If we try the game now, the player should move left and right wherever we touch or click on the screen.
+
+This works, but let's make it prettier!
+
+What if the player tilted slightly in the direction it's moving? We also don't want to move outside of the screen for any reason.
+
+Let's add those features!
+
+[source,javascript]
+-------------------
+import { game } from '..';
+import { Smooth } from '../Utils/EasingFunctions'
+...
+
+export default class Player extends Entity {
+    constructor(x, y, options) {
+        super(x, y, options);
+        
+        this.img = game.images.player;
+        this.size = game.playerSize;
+        this.goalRotation = 0;
+    }
+}
+
+update(){
+    ...
+    this.handleControls();
+
+    this.rotation = Smooth(this.rotation, this.goalRotation, 8);
+}
+
+handleControls(){
+    if(game.isTouching){
+        this.pos.x = Smooth(this.pos.x, game.mouseX, 13);
+        this.keepInsideScreen();
+
+        const isTouchingFarEnough = Math.abs(this.pos.x - game.mouseX) > this.size / 2;
+
+        if (isTouchingFarEnough) {
+            const movingDirection = Math.sign(game.mouseX - this.pos.x);
+            this.goalRotation = movingDirection * game.radians(15);
+        }else{
+            this.goalRotation = 0;
+        }
+    }else{
+        this.goalRotation = 0;
+    }
+}
+
+keepInsideScreen() {
+    const limitLeft = this.size / 2;
+    const limitRight = game.width - this.size / 2;
+    this.pos.x = game.constrain(this.pos.x, limitLeft, limitRight);
+}
+-------------------
+
+With `keepInsideScreen()`, we're simply constraining the player's `x` coordinate so we don't overlap or go outside the screen boundaries.
+
+Then we check if we're touching outside of the player, and if we are, set our `goalRotation` slightly to that side.
+
+Looking good so far!
+
+
+Adding Collectibles
+~~~~~~~~~~~~~~~~~~~
+
+We have the player. Now we need something to collect!
+
+Let's make a new `Collectible.js` file inside the `Game/Entities` folder, just like we did with `Player`, and give it some properties:
+
+[source,javascript]
+-------------------
+import { game } from '..'
+import Entity from './Entity'
+
+export default class Collectible extends Entity {
+    constructor(x, y, options) {
+        super(x, y, options);
+        
+        this.img = game.images.collectible;
+        this.size = game.random(game.collectibleSizeMin, game.collectibleSizeMax);
+        this.tag = "collectible";
+        this.velocity.y = game.random(game.speedMin, game.speedMax);
+        this.rotSpeed = game.random(-0.03, 0.03);
+        this.isCollected = false;
+    }
+}
+-------------------
+
+We have a bit more going on here than with player. Let's break it down:
+
+`this.img = game.images.collectible` - give it a previously loaded Collectible image
+
+`this.size = game.random(game.collectibleSizeMin, game.collectibleSizeMax)` - set the size to a random value between `game.collectibleSizeMin` and `game.collectibleSizeMax`
+
+`this.tag = "collectible"`` - set the tag, so we can find it later
+
+`this.velocity.y = game.random(game.speedMin, game.speedMax)` - set the vertical velocity to a random value between `game.speedMin` and `game.speedMax`
+
+`this.rotSpeed = game.random(-0.03, 0.03)` - set the rotation speed to a random value between `-0.03` and `0.03`
+
+`this.isCollected = false` - a boolean to track whether it's been collected or not
+
+In order for this to work, we need to define some more values inside the game settings, so we'll head back to `Game/preload.js`, and in `initializeValues()`:
+
+[source,javascript]
+-------------------
+...
+const initializeValues = () => {
+    ...
+    game.speedMin = 2;
+    game.speedMax = 4;
+    game.collectibleSizeMin = isMobile() ? 55 : 85;
+    game.collectibleSizeMax = isMobile() ? 75 : 105;
+}
+-------------------
+
+Since the `Entity` class has its movement already handled based on the `velocity` property that we already modified in the `Collectible` constructor, that's all we needed to do to have our Collectibles fall down indefinitely!
+
+Now let's try spawning some!
+
+Since we want our collectibles to spawn throughout the game, and not just in the beginning like the Player, we can do that inside `Game/draw.js`. Every function placed here will run with each game frame.
+
+We'll define a new `manageSpawn()` function that will handle our spawning logic and put it inside `draw()`:
+
+[source,javascript]
+-------------------
+...
+const draw = () => {
+    ...
+    manageSpawn();
+}
+
+const manageSpawn = () => {
+    game.spawnTimer -= game.delta();
+
+    if (game.spawnTimer <= 0) {
+        spawnCollectible();
+        game.spawnTimer = game.random(game.spawnPeriodMin, game.spawnPeriodMax);
+    }
+}
+
+const spawnCollectible = () => {
+    const x = game.random(0, game.width);
+    const y = -game.collectibleSizeMax;
+    game.addEntity(new Collectible(x, y));
+}
+-------------------
+
+Every frame, we'll decrease `game.spawnTimer` by `game.delta()`. Once it reaches `0`, we spawn a new collectible at a random point above the screen and reset the timer to a random value between `game.spawnPeriodMin` and `game.spawnPeriodMin`.
+
+Once again, we need to define the new values in game settings:
+
+[source,javascript]
+-------------------
+...
+const initializeValues = () => {
+    ...
+    game.spawnPeriodMin = 1.5;
+    game.spawnPeriodMax = 2;
+    game.spawnTimer = 0.1;
+}
+-------------------
+
+If you start the game now, you should see a bunch of donuts appearing every `1.5` to `2` seconds and falling to the bottom.
+
+That's all nice and dandy, but how do we catch them? No point in falling donuts if you can't eat them!
+
+
+Collision Checking
+~~~~~~~~~~~~~~~~~~
+
+To check for collisions between Player and Collectibles, we'll modify `Game/Entities/Player.js` again.
+
+Let's add a new function to do that, and put it in `update()`!
+
+[source,javascript]
+-------------------
+...
+import { CollisionCircle } from '../Utils/Collision'
+
+export default class Player extends Entity {
+    ...
+
+    update(){
+        ...
+        this.checkCollisions();
+    }
+
+    checkCollisions() {
+        const collectibles = game.findByTag('collectible');
+
+        collectibles.forEach(collectible => {
+            if (!collectible.isCollected && CollisionCircle(this, collectible)) {
+                collectible.onCollect();
+            }
+        });
+    }
+}
+-------------------
+
+First, we use `game.findByTag()` filter our collectibles, then run through each one asking if they are colliding with the `Player`.
+
+For that, we're using `CollisionCircle()`, provided by the game template (from `Game/Utils/Collision`), which takes two `Entities` as arguments.
+
+So if we are indeed colliding, and the collectible in question hasn't already been collected, we trigger the `onCollect()` handler on the target collectible which we will define next.
+
+Back to `Game/Entities/Collectible.js`:
+
+[source,javascript]
+-------------------
+...
+
+export default class Collectible extends Entity {
+    ...
+
+    
+    onCollect() {
+        this.isCollected = true;
+    }
+}
+-------------------
+
+This just sets our `isCollected` flag to true.
+
+Now, we could just remove our Collectible object now and be done with it, but we don't want this to be like any other tutorial. Let's spice things up a bit!
+
+Instead of the Collectible just disappearing upon contact, let's have the Player attract it like a magnet and make it explode into particles! Now that sounds more fun!
+
+So let's override Collectible's `update()` function, but also keep the original behavior:
+
+[source,javascript]
+-------------------
+import { game } from '..'
+import Entity from './Entity'
+import playSound from '../Utils/playSound'
+import { Smooth, Ease, EasingFunctions } from '../Utils/EasingFunctions'
+
+export default class Collectible extends Entity {
+    constructor(x, y, options){
+        super(x, y, options);
+        ...
+
+        this.animTimer = 0;
+    }
+
+    update(){
+        super.update();
+        this.handleAnimation();
+    }
+
+    handleAnimation() {
+        if (!this.isCollected) return;
+
+        this.animTimer += game.delta() * 4;
+
+        this.scale.x = Ease(EasingFunctions.easeInCubic, this.animTimer, 1, -0.95);
+        this.scale.y = Ease(EasingFunctions.easeInCubic, this.animTimer, 1, -0.95);
+        
+        this.moveTowardsPlayer();
+
+        if (this.animTimer >= 1) this.getCollected();
+    }
+
+    moveTowardsPlayer() {
+        if (!this.isCollected) return;
+
+        this.velocity.y = Smooth(this.velocity.y, 0, 8);
+        this.rotSpeed = Smooth(this.rotSpeed, 0, 8);
+        this.pos.x = Smooth(this.pos.x, game.player.pos.x, 12);
+        this.pos.y = Smooth(this.pos.y, game.player.pos.y, 12);
+    }
+
+    getCollected() {
+        this.shouldBeRemoved = true;
+
+        spawnParticles(game.player.pos.x, game.player.pos.y, 10, { img: this.img });
+
+        const x = game.player.pos.x;
+        const y = game.player.pos.y - game.player.size * 0.75;
+
+        spawnFloatingText("+1", x, y);
+        game.addScore(1)
+        playSound(game.sounds.collect);
+        game.player.pulse();
+    }
+}
+-------------------
+
+That's a lot of code! Let's break it down:
+
+So, once set our `isCollected` value to true, things start to happen.
+
+In `handleAnimation()`, we advance the `animTimer` property by `game.delta() * 4`, then we use that `animTimer` value to do some `EasingFunctions` and shrink the scale from 1 to 0.05.
+
+At the same time, in `moveTowardsPlayer()`, we're doing several things at once:
+
+* `this.velocity.y = Smooth(this.velocity.y, 0, 8)` - Gradually disable the existing vertical velocity
+* `this.rotSpeed = Smooth(this.rotSpeed, 0, 8)` - Start spinning wildly
+* `this.pos.x = Smooth(this.pos.x, game.player.pos.x, 12)`
+* `this.pos.y = Smooth(this.pos.y, game.player.pos.y, 12)` - Quickly move towards the player location
+
+Once `animTimer` has gone up to `1` (in about `0.25` seconds), Easing animation will be over and that's when the actual collecting happens with `getCollected()`.
+
+Then finally, in `getCollected()`, we:
+
+* Set the `shouldBeRemoved` flag to `true`, which lets the game know this object will be deleted in the next frame.
+* Spawn 10 particles at Player's position and give them the same image as the Collectible.
+* Spawn a `+1` floating text a little above the player
+* Add 1 to game score
+* Play the `collect` sound.
+* Call `game.player.pulse()`, which resets Player's "pulse" animation. We don't have that animation yet, so let's set it up! Also, remember when we set the `game.player` property. We finally made use of it!
+
+Back to `Game/Entities/Player.js`:
+
+[source,javascript]
+-------------------
+import { game } from '..'
+import Entity from './Entity'
+import { Smooth, Ease, EasingFunctions } from '../Utils/EasingFunctions'
+
+export default class Player extends Entity {
+    constructor(x, y, options){
+        super(x, y, options);
+        ...
+
+        this.animTimer = 0;
+    }
+
+    update(){
+        ...
+        this.handleAnimation();
+    }
+
+    handleAnimation() {
+        if (this.animTimer > 1) return;
+
+        this.animTimer += game.delta();
+
+        const intensity = 0.3;
+        this.scale.x = Ease(EasingFunctions.easeOutElastic, this.animTimer, 1 + intensity, -intensity);
+        this.scale.y = Ease(EasingFunctions.easeOutElastic, this.animTimer, 1 - intensity, +intensity);
+    }
+
+    pulse() {
+        this.animTimer = 0;
+    }
+}
+-------------------
+
+As you can see, it's a similar animation setup as in `Collectible`.
+
+We're incrementing the `animTimer` property as long as it's below `1`, because our `EasingFunctions` only work for values between `0` and `1`.
+
+Then we modify the scale again, but this time we're using the `easeOutElastic` function, which gives us a nice bouncy effect.
+
+`pulse()` function just resets the `animTimer` to `0`, which restarts the animation.
+
+Now it's getting better!
+
+Checking for missed Collectibles
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Like all good things in life, this game, too, has to come to an end!
+
+To do that, we'll have to check if any of the collectibles went past the player and off the screen.
+
+Let's go back to `Game/Entities/Collectible.js` and add that check:
+
+[source,javascript]
+-------------------
+import { game } from '..'
+import Entity from './Entity'
+import playSound from '../Utils/playSound'
+
+export default class Collectible extends Entity {
+    update(){
+        ...
+        this.checkIfMissed();
+    }
+
+    checkIfMissed() {
+        if (game.gameOver) return;
+
+        const isBelowScreen = this.pos.y > game.height + this.size / 2;
+        if (isBelowScreen) this.onMiss();
+    }
+
+    onMiss() {
+        game.loseLife();
+        playSound(game.sounds.loselife);
+        game.camera.shake(0.25, 12);
+        this.shouldBeRemoved = true;
+    }
+}
+-------------------
+
+First, we check the Collectible's `pos.y` coordinate, and if it's higher the lower edge of the screen, we trigger the `onMiss()` function, where we:
+
+* Trigger a `loseLife` event. The template makes sure that the game automatically ends when there are no lives left.
+* Play a `loselife` sound
+* Shake the camera a bit to amplify that negative effect
+* Set the `shouldBeRemoved` flag to `true`, to make sure our object will be deleted from memory in the next frame.
+
+
+-Manage difficulty
+
+-Remix
+
+-Screenshot
+
