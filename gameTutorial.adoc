@@ -67,6 +67,12 @@ Your `remixData` object should now look something like this:
     "musicVolume": 0.25,
     "title": "Catch The Donuts",
     "backgroundImage": "https://images.koji-cdn.com/377f7596-8edf-44b1-994d-f9926b3aa641/userData/682dt-G68b11.png",
+    "imgParticles": [
+      "https://images.koji-cdn.com/d4d2aab7-1847-481d-8aa6-6866d81d5e0f/6ik7b-star1.png",
+      "https://images.koji-cdn.com/d4d2aab7-1847-481d-8aa6-6866d81d5e0f/xvpr0-star3.png",
+      "https://images.koji-cdn.com/d4d2aab7-1847-481d-8aa6-6866d81d5e0f/0pfca-start2.png",
+      "https://images.koji-cdn.com/d4d2aab7-1847-481d-8aa6-6866d81d5e0f/mwf5o-star5.png"
+    ],
     "particle": "https://images.koji-cdn.com/d4d2aab7-1847-481d-8aa6-6866d81d5e0f/zfnue-particle2.png",
     "imgLife": "https://images.koji-cdn.com/c166301e-e9be-4a9c-8d08-aaffe23d82bb/userData/3z6gw-life.png",
     "imgPlayer": "https://images.koji-cdn.com/814f445d-4e8d-40cb-83fe-04d120cc1889/userData/x0kfr-player.png",
