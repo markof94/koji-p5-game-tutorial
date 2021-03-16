@@ -977,7 +977,7 @@ Here are some features you can try adding:
 * Have the player be able to move in all directions, not just horizontally
 * Add keyboard controls
 * Add projectiles so you can shoot the falling objects
-* Make an MMORPG out of this! (just kidding)
+* Make an MMORPG out of this! [small]#(just kidding)#
 
 You can also post your new game to our https://discord.gg/kMkjJQ6Phb[Discord Server], along with any suggestions and thoughts on how you think we can make this tutorial even better!
 
