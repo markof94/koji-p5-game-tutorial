@@ -1,0 +1,304 @@
+:toc:
+
+= Adding In-Game Purchases to a Koji Game
+
+In this tutorial, we'll go through adding an In-Game Purchase feature to an existing game on Koji.
+
+As our starting point, we are going to fork https://withkoji.com/~Svarog1389/3ej3[Tower Stack], which was built on top of my https://withkoji.com/~Svarog1389/game-template-1[p5.js Game Template^].
+
+Some tutorials worth checking out before this if you're new to Koji:
+
+* https://developer.withkoji.com/tutorials/getting-started/your-first-project[Getting Started^]
+
+* https://github.com/markof94/koji-p5-game-tutorial/blob/main/gameTutorial.adoc[Creating a remixable game^]
+
+Koji web editor is recommended for this tutorial, but you are free to http://developer.withkoji.com/docs/develop/use-git[clone the newly created project to your local environment] if you wish.
+
+If you get stuck at any point, feel free to ask for help in our https://discord.gg/kMkjJQ6Phb[Discord Server], or e-mail me at *marko@withkoji.com*
+
+You can see check out the finished game https://withkoji.com/~Svarog1389/2d69[here].
+
+*Let's get started* by cloning https://withkoji.com/~Svarog1389/3ej3[Tower Stack]. You can do that by clicking on the *Koji logo* on the upper right corner, then *Advanced*, then find the *Fork* button.
+
+== Game Overview
+
+Tower Stack is a hyper-casual game where your goal is to stack blocks as high as you can without missing.
+
+The block you're supposed to place swings from the top of the screen and tapping releases it. Landing it on top of a previous block, you get a point, and if you miss, you lose a life.
+
+The game ends when there are no lives left.
+
+== Our Goal
+
+We already have a working game, so we're just supposed to add a feature that lets players buy more lives, we're going to do that by modifying the endgame behavior. 
+
+Currently, once the game ends, it automatically takes you to to the leaderboard or score submission screen. We are going to make an intervention there and insert a menu that either lets you continue regularly to score submission or lets you buy a new set of lives so you can keep playing.
+
+And the *best part* about it is that whoever remixes this game gets to choose how much this feature costs!
+
+To break it down into steps, we need to:
+
+* Add the `InAppPurchases` entitlement to `koji.json`
+* Define a customizable price value in `remixData` inside `koji.json`
+* Show a menu when the game ends that lets users take action
+* Modify game behavior to suit our new feature
+* Use `Koji.iap` from the `@withkoji/core` package to handle our purchase
+* Notify the game instance that a purchase has been made and reset the lives
+* Make price customizable in `Remix` menu
+
+== Setting up `koji.json`
+
+=== Entitlements
+
+First, we should let Koji know that our new game template will contain `In-App Purchases`.
+
+For that, we need to add an `entitlement`.
+
+If you look inside `koji.json` located in the root of your project, you'll see an object called `entitlements` that looks like this:
+
+[source,json]
+-------------
+"entitlements": {
+    "InstantRemixing": true,
+    "InstantRemixingNativeNavigation": true,
+    "FeedEvents": true,
+    "CustomMetadata": {
+        "enabled": true,
+        "metadata": {
+        "title": "{{remixData.title}}",
+        "description": "How high can you stack them?"
+        }
+    }
+}
+-------------
+
+Let's add a new property called `InAppPurchases`, so your `entitlements` should now look like this:
+
+[source,json]
+-------------
+"entitlements": {
+    "InstantRemixing": true,
+    "InstantRemixingNativeNavigation": true,
+    "FeedEvents": true,
+    "CustomMetadata": {
+        "enabled": true,
+        "metadata": {
+        "title": "{{remixData.title}}",
+        "description": "How high can you stack them?"
+        }
+    },
+    "InAppPurchases": {
+        "enabled": true,
+        "products": [
+            {
+                "sku": "extraLives",
+                "name": "Extra Lives",
+                "price": "{{remixData.price}}",
+                "isConsumable": true
+            }
+        ]
+    }
+}
+-------------
+
+We've just added a product to our template:
+
+* `sku` - this is the string we will use later to look up our product when doing the actual purchase
+* `name` - This will be shown on the receipt when users make a purchase
+* `price` - Price of our product in USD. We set this to `{{remixData.price}}` which means it will use our custom value. We will define this in the next step.
+* `isConsumable` - We set this to `true` to allow this product to be purchased multiple times
+
+Remix Data
+^^^^^^^^^^
+
+Still inside `koji.json`, scroll down to the `remixData` object. This is where we can define our customizable values that users can modify while remixing our template.
+
+Let's add a `price` property:
+
+[source,json]
+-------------
+"remixData": {
+    ...
+    "price": 0.1
+  },
+-------------
+
+
+[NOTE]
+In order for our product to be registered, we need to *publish from the web editor*. This will allow us to test our purchases from the Koji Debugger later.
+
+
+[IMPORTANT]
+If working *locally*, you need to push your changes and pull them into the web editor, then publish. More info https://developer.withkoji.com/docs/publish/publish-locally-developed[here]
+
+== Payment Menu Component
+Let's make some UI that will enable our players to make purchases.
+
+Go to `frontend/src/Components/View/` and make a new file called `PaymentDialog.js`.
+
+Feel free to go ahead and copy the whole component into your file: 
+[source,javascript]
+-------------------
+import React from 'react';
+import styled from 'styled-components';
+import Koji from '@withkoji/core'
+import NavigateNextIcon from '@material-ui/icons/NavigateNext'
+import optimizeImage from '../../Utils/optimizeImage';
+
+const Container = styled.div`
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    background-color: rgba(0,0,0,0.35);
+    opacity: 0;
+    overflow: hidden;
+    z-index: 3;
+    color: #FFFFFF;
+    animation: fade-in 0.5s ease both;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+`;
+
+const Wrapper = styled.div`
+    position: relative;
+    min-width: 350px;
+
+    background-color: #007AFF;
+    background-size: cover;
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.2);
+    padding: 30px;
+    padding-top: 16px;
+    border-radius: 35px 35px;
+
+    animation: fade-in-slide-bottom 0.5s 0.25s ease both;
+`;
+
+const Title = styled.div`
+    margin-bottom: 20px;
+    font-size: 32px;
+    font-weight: 800;
+    text-align: center;
+    user-select: none;
+    white-space: pre-wrap;
+`;
+
+const Button = styled.button`
+    position: relative;
+    width: 100%;
+    height: 64px;
+    max-width: 500px;
+    min-height: 64px;
+    background-color: #FFFFFF;
+    color: #007AFF;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    font-size: 18px;
+    font-weight: bold;
+    border: 0;
+    border-radius: 20px;
+    outline: none;
+    transition: all 0.1s ease;
+    font-family: inherit;
+    box-shadow: 0px 12px 20px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    margin: 15px auto;
+    user-select: none;
+
+    &:active{
+        transform: translateY(4px);
+    }
+
+    svg{
+        font-size: 28px;
+    }
+
+    &:hover{
+        background-color: rgba(240, 240, 255, 1);
+    }
+
+`;
+
+const LifeLabel = styled.div`
+    display: flex;
+    align-items: center;
+`;
+
+const LifeIcon = styled.img`
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    margin-right: 4px;
+`;
+
+const PaymentDialog = (props) => {
+    const {
+        onPurchase,
+        onPurchaseCancel
+    } = props;
+
+    const remixValues = Koji.remix.get();
+    const price = Number(remixValues.price).toFixed(2);
+    const lifeIcon = optimizeImage(remixValues.imgLife, 64, 64);
+
+    return (
+        <Container >
+            <Wrapper>
+                <Title>
+                    {`GAME OVER`}
+                </Title>
+                <Button
+                    onClick={onPurchase}
+                >
+                    <LifeLabel>
+                        <LifeIcon src={lifeIcon} />
+                        {"Get Extra Lives"}
+                    </LifeLabel>
+                    <div>{`$${price}`}</div>
+                </Button>
+
+                <Button
+                    style={{ marginBottom: `0` }}
+                    onClick={onPurchaseCancel}
+                >
+                    <div>{"View Leaderboard"}</div>
+                    <NavigateNextIcon />
+                </Button>
+            </Wrapper>
+        </Container>
+    )
+}
+
+export default PaymentDialog;
+-------------------
+
+Finishing Up
+------------
+
+That's it, we just created a *fun and remixable Koji game*!
+
+All that's left to do is to publish it from the *Publish Now* menu, and share it with your friends so they can compete for the top leaderboard spot!
+
+Of course, the project is now your playground. You can go back to modify or add new features, make improvements, anything you can imagine!
+
+Here are some features you can try adding:
+
+* Add horizontal speed to Collectibles
+* Multiple Collectible images
+* Flip the rules so that you have to avoid everything
+* Add more animations to collectibles
+* Have the player be able to move in all directions, not just horizontally
+* Add keyboard controls
+* Add projectiles so you can shoot the falling objects
+* Make an MMORPG out of this! [small]#(just kidding)#
+
+You can also post your new game to our https://discord.gg/kMkjJQ6Phb[Discord Server], along with any suggestions and thoughts on how you think we can make this tutorial even better!
+
+
+You can find the finished game created by following this tutorial https://withkoji.com/~Svarog1389/ekpy[here].
