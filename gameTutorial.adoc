@@ -1,5 +1,6 @@
- Creating a remixable game on Koji
-----------------------------------
+:toc:
+
+= Creating a remixable game on Koji
 
 In this tutorial, we will go through the process of creating a remixable https://withkoji.com/~Svarog1389/rxkd[Falling Objects^] game with an existing https://withkoji.com/~Svarog1389/game-template-1[p5.js Game Template^] as our starting point.
 
@@ -14,16 +15,15 @@ If you get stuck at any point, feel free to ask for help in our https://discord.
 You can also find an overview of the whole game template inside the *README* contained inside the project after you clone it.
 
 
-Game Overview
-~~~~~~~~~~~~~
+== Game Overview
+
 Falling Objects is a simple game where the player tries to collect as many falling objects as they can without them falling off the screen.
 
 Player loses a life if an object falls down, and the game is over when there are no lives left.
 
 Player moves the character horizontally on the bottom by touching or clicking anywhere on the screen.
 
-Setting up `koji.json`
-~~~~~~~~~~~~~~~~~~~~~~
+== Setting up `koji.json`
 
 First, let's define our game assets. 
 
@@ -82,12 +82,12 @@ Your `remixData` object should now look something like this:
   },
 --------------
 
-*Don't forget to save your changes!*
+[NOTE]
+Don't forget to save your changes and reload the live preview after editing `koji.json`
 
 If you have a Live Preview running (right side of your screen in the Web Editor), you'll notice that the background image has already changed, as well as the player image in the main menu!
 
-Loading assets
-~~~~~~~~~~~~~~
+== Loading assets
 
 Now that we've added our assets to `remixData`, we need to load them inside our game so we can use them later.
 
@@ -123,8 +123,7 @@ Change it to something like:
 
 `game.instructions = "Touch to move around!";`
 
-Adding a Player
-~~~~~~~~~~~~~~~
+== Adding a Player
 
 This template uses an https://en.wikipedia.org/wiki/Entity_component_system[Entity] system, so we can extend the base `Entity` class from our template to define the game objects.
 
@@ -272,8 +271,7 @@ image:https://i.imgur.com/ELLEfka.gif[alt="screenshot player",width=160,height=1
 Looking good so far!
 
 
-Adding Collectibles
-~~~~~~~~~~~~~~~~~~~
+== Adding Collectibles
 
 We have the player. Now we need something to collect!
 
@@ -382,8 +380,7 @@ image:https://i.imgur.com/mtzJFG2.gif[alt="screenshot player",width=160,height=1
 That's nice and all, but how do we catch them? No point in falling donuts if you can't eat them!
 
 
-Collision Checking
-~~~~~~~~~~~~~~~~~~
+== Collision Checking
 
 To check for collisions between Player and Collectibles, we'll modify `frontend/src/Components/Game/Entities/Player.js` again.
 
@@ -577,8 +574,7 @@ image:https://i.imgur.com/EcVO5ZU.gif[alt="screenshot player",width=160,height=1
 
 Now it's looking better!
 
-Checking for missed Collectibles
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Checking for missed Collectibles
 
 Like all good things in life, this game, too, has to come to an end somehow!
 
@@ -628,8 +624,7 @@ image:https://i.imgur.com/ptLizkT.gif[alt="screenshot player",width=160,height=1
 [NOTE]
 Deleting unused objects from memory is an especially important step in order to prevent memory leaks from prolonged gameplay sessions which can result in performance slowdown and eventually a crash
 
-Managing difficulty
-~~~~~~~~~~~~~~~~~~~
+== Managing difficulty
 
 At this stage, our game is finally playable!
 
@@ -693,15 +688,13 @@ Every time the difficulty increases, we:
 * Slightly decrease the period at which Collectibles spawn
 * Slightly increase the falling speed of Collectibles
 
-Congratulations!
-^^^^^^^^^^^^^^^^
+*Congratulations!*
 
 We've actually finished developing our game!
 
 Of course, you can go ahead and try modifying something, or adding a new feature. Everything's a bonus from now on!
 
-Remix
------
+== Remix
 
 We've finished the main part of our game. But this is Koji! We don't stop here. 
 
@@ -868,8 +861,7 @@ image:https://i.imgur.com/F5BamYt.png[alt="screenshot player",width=256,height=2
 
 That's our `Remix` mode finished! We've just added the ability for users to change the `Collectible` image!
 
-Customizing the thumbnail preview
----------------------------------
+== Customizing the thumbnail preview
 
 The very last thing we need to do before releasing our new game into the wild, is to customize the thumbnail preview, so when users share their remixes, they get nice little previews that people will click on!
 
@@ -944,8 +936,7 @@ Once done, your thumbnail preview should look something like this:
 
 image:https://i.imgur.com/rsElqqp.png[alt="screenshot player",width=256,height=256]
 
-Finishing Up
-------------
+== Finishing Up
 
 That's it, we just created a *fun and remixable Koji game*!
 
