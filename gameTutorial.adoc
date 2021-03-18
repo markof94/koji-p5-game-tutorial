@@ -724,7 +724,7 @@ To test it out, try changing the `Player` image and going into preview mode. Our
 
 But what about our `Collectible` image? Let's make that customizable too, using a similar workflow as with `Player`.
 
-First, let's make a State Hook that will represent our `Collectible` image:
+First, let's make a State Hook that will represent our `Collectible` image, and assign the initial values:
 
 [source,javascript]
 -------------------
@@ -733,21 +733,6 @@ const Component = () => {
     ...
     const [imgCollectible, setImgCollectible] = useState("");
     const [isCollectibleInvalid, setIsCollectibleInvalid] = useState("");
-
-}
-
--------------------
-
-Notice that we also created an `isCollectibleInvalid` state hook. We will need this to make sure the user has actually uploaded an image. We don't them to publish the game without one.
-
-Then in `assignInitialValues()`, which is inside our useEffect Hook when the Remix components mounts, we assign the initial value from `koji.json`:
-
-[source,javascript]
--------------------
-...
-const Component = () => {
-    ...
-    const [imgCollectible, setImgCollectible] = useState("");
     ...
 
     const assignInitialValues = () => {
@@ -759,9 +744,12 @@ const Component = () => {
         ...
 
     })
-
 }
 -------------------
+
+Notice that we also created an `isCollectibleInvalid` state hook. We will need this to make sure the user has actually uploaded an image. We don't want them to publish the game without one.
+
+Then in `assignInitialValues()`, which is inside our useEffect Hook when the Remix components mounts, we assign the initial value from `koji.json`:
 
 We also need to define some functions that will let us change or delete our collectible image:
 
