@@ -904,7 +904,6 @@ It looks something like this:
         top: '50%'
     }}
 />
-}
 -------------------
 
 Let's move the player down a bit. To do that, just change the `top` value to something like `80%`:
@@ -919,7 +918,6 @@ Let's move the player down a bit. To do that, just change the `top` value to som
         top: '80%'
     }}
 />
-}
 -------------------
 
 Now, let's add some `Collectible` images by duplicating the player's `FeaturedImage` below, and changing their positions around. They don't have to be exactly the same, you can play around and see what you like best. You can even randomize their positions if you want!
@@ -952,7 +950,6 @@ Now, let's add some `Collectible` images by duplicating the player's `FeaturedIm
         top: '50%'
     }}
 />
-}
 -------------------
 
 Once done, your thumbnail preview should look something like this: 
